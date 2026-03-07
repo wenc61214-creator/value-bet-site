@@ -359,6 +359,69 @@
 
     let allMatches = [];
 
+    function safeNum(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function safeStr(value) {
+      return value === null || value === undefined ? "" : String(value);
+    }
+
+    function getKickoff(match) {
+      return safeStr(match.kickoff_time || match.match_time || match.time || "");
+    }
+
+    function getLeague(match) {
+      return safeStr(match.league || match.competition || "");
+    }
+
+    function getHomeTeam(match) {
+      return safeStr(match.home_team || match.home || "");
+    }
+
+    function getAwayTeam(match) {
+      return safeStr(match.away_team || match.away || "");
+    }
+
+    function getTeams(match) {
+      const home = getHomeTeam(match);
+      const away = getAwayTeam(match);
+      return `${home} vs ${away}`.trim();
+    }
+
+    function getBookmakerOdds(match) {
+      if (match.bookmaker_odds !== null && match.bookmaker_odds !== undefined && match.bookmaker_odds !== "") {
+        return Number(match.bookmaker_odds);
+      }
+      if (match.market_odds !== null && match.market_odds !== undefined && match.market_odds !== "") {
+        return Number(match.market_odds);
+      }
+      return 0;
+    }
+
+    function getValuePercent(match) {
+      if (match.value_percent !== null && match.value_percent !== undefined && match.value_percent !== "") {
+        return Number(match.value_percent);
+      }
+      if (match.value_edge !== null && match.value_edge !== undefined && match.value_edge !== "") {
+        return Number(match.value_edge) * 100;
+      }
+      return 0;
+    }
+
+    function getNotes(match) {
+      return safeStr(match.notes || match.note || "");
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString("zh-CN", { hour12: false });
+    }
+
     function escapeHtml(text) {
       if (text === null || text === undefined) return "";
       return String(text)
@@ -416,20 +479,20 @@
 
       tableBody.innerHTML = list.map(item => `
         <tr>
-          <td>${escapeHtml(item.league)}</td>
-          <td>${escapeHtml(item.home_team)}</td>
-          <td>${escapeHtml(item.away_team)}</td>
-          <td>${escapeHtml(formatDate(item.match_time))}</td>
-          <td>${escapeHtml(item.market_type)}</td>
-          <td>${escapeHtml(item.selection)}</td>
-          <td>${escapeHtml(item.bookmaker)}</td>
+          <td>${escapeHtml(getLeague(item))}</td>
+          <td>${escapeHtml(getHomeTeam(item))}</td>
+          <td>${escapeHtml(getAwayTeam(item))}</td>
+          <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
+          <td>${escapeHtml(item.market_type || "")}</td>
+          <td>${escapeHtml(item.selection || "")}</td>
+          <td>${escapeHtml(item.bookmaker || "")}</td>
           <td>${item.model_probability ?? item.model_proba ?? ""}</td>
           <td>${item.implied_probability ?? ""}</td>
           <td>${item.model_odds ?? ""}</td>
-          <td>${item.market_odds ?? ""}</td>
-          <td>${getValueLabel(item.value_edge)}</td>
+          <td>${getBookmakerOdds(item) || ""}</td>
+          <td>${getValueLabel(getValuePercent(item))}</td>
           <td>${getYesNoLabel(item.is_value_bet)}</td>
-          <td>${escapeHtml(item.note)}</td>
+          <td>${escapeHtml(getNotes(item))}</td>
         </tr>
       `).join("");
     }
@@ -513,20 +576,20 @@
 
         tableBody.innerHTML = data.map(item => `
           <tr>
-            <td>${escapeHtml(item.league)}</td>
-            <td>${escapeHtml(item.home_team)}</td>
-            <td>${escapeHtml(item.away_team)}</td>
-            <td>${escapeHtml(formatDate(item.match_time))}</td>
-            <td>${escapeHtml(item.market_type)}</td>
-            <td>${escapeHtml(item.selection)}</td>
-            <td>${escapeHtml(item.bookmaker)}</td>
+            <td>${escapeHtml(getLeague(item))}</td>
+            <td>${escapeHtml(getHomeTeam(item))}</td>
+            <td>${escapeHtml(getAwayTeam(item))}</td>
+            <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
+            <td>${escapeHtml(item.market_type || "")}</td>
+            <td>${escapeHtml(item.selection || "")}</td>
+            <td>${escapeHtml(item.bookmaker || "")}</td>
             <td>${item.model_probability ?? item.model_proba ?? ""}</td>
             <td>${item.implied_probability ?? ""}</td>
             <td>${item.model_odds ?? ""}</td>
-            <td>${item.market_odds ?? ""}</td>
-            <td>${getValueLabel(item.value_edge)}</td>
+            <td>${getBookmakerOdds(item) || ""}</td>
+            <td>${getValueLabel(getValuePercent(item))}</td>
             <td>${getYesNoLabel(item.is_value_bet)}</td>
-            <td>${escapeHtml(item.note)}</td>
+            <td>${escapeHtml(getNotes(item))}</td>
           </tr>
         `).join("");
       } catch (err) {
