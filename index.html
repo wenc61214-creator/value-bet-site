@@ -189,6 +189,37 @@
       padding: 14px;
     }
 
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 260px;
+      padding: 12px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .filter-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .filter-check input {
+      width: 16px;
+      height: 16px;
+    }
+
     .summary-box .label {
       font-size: 13px;
       color: #666;
@@ -249,6 +280,20 @@
     <div class="card">
       <h2>比赛列表（来自 Supabase）</h2>
 
+      <div class="controls-bar">
+        <input
+          id="searchInput"
+          class="search-input"
+          type="text"
+          placeholder="搜索联赛 / 球队 / 盘口类型 / 博彩公司"
+        />
+
+        <label class="filter-check">
+          <input type="checkbox" id="valueOnlyToggle" />
+          只看价值投注
+        </label>
+      </div>
+      
       <div class="summary-grid">
         <div class="summary-box">
           <div class="label">比赛总数</div>
@@ -309,6 +354,10 @@
     const totalCountEl = document.getElementById("totalCount");
     const valueBetCountEl = document.getElementById("valueBetCount");
     const avgMarketOddsEl = document.getElementById("avgMarketOdds");
+    const searchInputEl = document.getElementById("searchInput");
+    const valueOnlyToggleEl = document.getElementById("valueOnlyToggle");
+
+    let allMatches = [];
 
     function escapeHtml(text) {
       if (text === null || text === undefined) return "";
@@ -340,6 +389,79 @@
         : '<span class="badge badge-no">否</span>';
     }
 
+    function updateSummary(list) {
+      const totalCount = list.length;
+      const valueBetCount = list.filter(item => item.is_value_bet).length;
+
+      const oddsList = list
+        .map(item => Number(item.market_odds))
+        .filter(num => !isNaN(num));
+
+      const avgMarketOdds = oddsList.length
+        ? (oddsList.reduce((a, b) => a + b, 0) / oddsList.length).toFixed(2)
+        : "0";
+
+      totalCountEl.textContent = totalCount;
+      valueBetCountEl.textContent = valueBetCount;
+      avgMarketOddsEl.textContent = avgMarketOdds;
+    }
+
+    function renderMatches(list) {
+      updateSummary(list);
+
+      if (!list || list.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="14">没有符合条件的比赛</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = list.map(item => `
+        <tr>
+          <td>${escapeHtml(item.league)}</td>
+          <td>${escapeHtml(item.home_team)}</td>
+          <td>${escapeHtml(item.away_team)}</td>
+          <td>${escapeHtml(formatDate(item.match_time))}</td>
+          <td>${escapeHtml(item.market_type)}</td>
+          <td>${escapeHtml(item.selection)}</td>
+          <td>${escapeHtml(item.bookmaker)}</td>
+          <td>${item.model_probability ?? item.model_proba ?? ""}</td>
+          <td>${item.implied_probability ?? ""}</td>
+          <td>${item.model_odds ?? ""}</td>
+          <td>${item.market_odds ?? ""}</td>
+          <td>${getValueLabel(item.value_edge)}</td>
+          <td>${getYesNoLabel(item.is_value_bet)}</td>
+          <td>${escapeHtml(item.note)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function applyFilters() {
+      const keyword = searchInputEl.value.trim().toLowerCase();
+      const valueOnly = valueOnlyToggleEl.checked;
+
+      const filtered = allMatches.filter(item => {
+        const searchText = [
+          item.league,
+          item.home_team,
+          item.away_team,
+          item.market_type,
+          item.selection,
+          item.bookmaker,
+          item.note
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        const matchKeyword = !keyword || searchText.includes(keyword);
+        const matchValue = !valueOnly || item.is_value_bet;
+
+        return matchKeyword && matchValue;
+      });
+
+      statusEl.textContent = `连接成功，已读取 ${allMatches.length} 条比赛数据，当前显示 ${filtered.length} 条。`;
+      renderMatches(filtered);
+    }
+
     async function loadMatches() {
       try {
         if (
@@ -365,6 +487,9 @@
         }
 
         statusEl.textContent = `连接成功，已读取 ${data.length} 条比赛数据。`;
+
+        allMatches = data || [];
+        applyFilters();
 
         const totalCount = data.length;
         const valueBetCount = data.filter(item => item.is_value_bet).length;
@@ -411,6 +536,9 @@
         tableBody.innerHTML = `<tr><td colspan="14">读取失败</td></tr>`;
       }
     }
+
+    searchInputEl.addEventListener("input", applyFilters);
+    valueOnlyToggleEl.addEventListener("change", applyFilters);
 
     loadMatches();
   </script>
