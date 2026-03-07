@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Value Bet Site</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -21,17 +22,17 @@
     header {
       background: #111827;
       color: white;
-      padding: 20px;
+      padding: 24px;
       text-align: center;
     }
 
     header h1 {
-      font-size: 32px;
+      font-size: 36px;
       margin-bottom: 10px;
     }
 
     header p {
-      font-size: 16px;
+      font-size: 18px;
       color: #d1d5db;
     }
 
@@ -52,6 +53,15 @@
     .card h2 {
       margin-bottom: 15px;
       color: #111827;
+    }
+
+    .status {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #eef2ff;
+      color: #1e3a8a;
+      margin-bottom: 16px;
+      font-size: 14px;
     }
 
     .grid {
@@ -82,6 +92,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
+      overflow: hidden;
     }
 
     th, td {
@@ -100,12 +111,31 @@
       font-weight: bold;
     }
 
+    .value-normal {
+      color: #666;
+      font-weight: bold;
+    }
+
+    .small {
+      color: #666;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
     footer {
       text-align: center;
       padding: 20px;
       color: #666;
       font-size: 14px;
       margin-top: 30px;
+    }
+
+    .error {
+      color: #b91c1c;
+      background: #fee2e2;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -119,10 +149,8 @@
     <div class="card">
       <h2>网站说明</h2>
       <p>
-        这是我的第一个价值投注网站。后面会接入：
-        football-data.org 提供比赛和球队数据，
-        The Odds API 提供博彩公司赔率，
-        再结合我自己的 value 计算逻辑，找出有价值的投注机会。
+        这是我的第一个价值投注网站。现在已经接入 Supabase 数据库，
+        会从 matches 表里读取比赛数据并展示出来。
       </p >
     </div>
 
@@ -143,40 +171,36 @@
         </div>
         <div class="stat-box">
           <h3>可视化展示</h3>
-          <p>将比赛、概率、赔率、value 结果清晰展示出来。</p >
+          <p>把数据库里的比赛数据直接展示出来。</p >
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>示例比赛</h2>
+      <h2>数据库连接状态</h2>
+      <div id="status" class="status">正在连接 Supabase...</div>
+      <div class="small">下面的比赛列表会从 Supabase 的 matches 表实时读取。</div>
+      <div id="errorBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>比赛列表（来自 Supabase）</h2>
       <table>
         <thead>
           <tr>
-            <th>比赛</th>
+            <th>联赛</th>
+            <th>主队</th>
+            <th>客队</th>
+            <th>比赛时间</th>
             <th>模型概率</th>
             <th>市场赔率</th>
             <th>Value</th>
+            <th>备注</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="matchesTable">
           <tr>
-            <td>阿森纳 vs 切尔西</td>
-            <td>主胜 58%</td>
-            <td>1.95</td>
-            <td class="value-good">正价值</td>
-          </tr>
-          <tr>
-            <td>国际米兰 vs 罗马</td>
-            <td>大2.5球 62%</td>
-            <td>1.80</td>
-            <td class="value-good">正价值</td>
-          </tr>
-          <tr>
-            <td>皇马 vs 塞维利亚</td>
-            <td>BTTS 48%</td>
-            <td>1.70</td>
-            <td>一般</td>
+            <td colspan="8">加载中...</td>
           </tr>
         </tbody>
       </table>
@@ -184,7 +208,94 @@
   </div>
 
   <footer>
-    © 2026 Value Bet Site - My First Betting Dashboard
+    © 2026 Value Bet Site - Connected to Supabase
   </footer>
+
+  <script>
+    // 第一步：把下面两个值改成你自己的
+    const SUPABASE_URL = "https://winxqeoigwtefybcuimm.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_IWJWPV2xKA1nn27L1e7wyQ_-SHy5cY-";
+
+    const statusEl = document.getElementById("status");
+    const errorBox = document.getElementById("errorBox");
+    const tableBody = document.getElementById("matchesTable");
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return "";
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString("zh-CN");
+    }
+
+    function getValueLabel(valueEdge) {
+      const n = Number(valueEdge);
+      if (isNaN(n)) return '<span class="value-normal">—</span>';
+      if (n > 0) return '<span class="value-good">正价值</span>';
+      return '<span class="value-normal">一般</span>';
+    }
+
+    async function loadMatches() {
+      try {
+        if (
+          SUPABASE_URL.includes("把你的") ||
+          SUPABASE_KEY.includes("把你的")
+        ) {
+          statusEl.textContent = "请先在代码里填入 Supabase URL 和 Publishable Key。";
+          tableBody.innerHTML = `<tr><td colspan="8">请先填写 Supabase 配置</td></tr>`;
+          return;
+        }
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        statusEl.textContent = "正在读取数据库数据...";
+
+        const { data, error } = await supabase
+          .from("matches")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        statusEl.textContent = `连接成功，已读取 ${data.length} 条比赛数据。`;
+
+        if (!data || data.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="8">数据库里还没有数据</td></tr>`;
+          return;
+        }
+
+        tableBody.innerHTML = data.map(item => `
+          <tr>
+            <td>${escapeHtml(item.league)}</td>
+            <td>${escapeHtml(item.home_team)}</td>
+            <td>${escapeHtml(item.away_team)}</td>
+            <td>${escapeHtml(formatDate(item.match_time))}</td>
+            <td>${item.model_proba ?? ""}</td>
+            <td>${item.market_odds ?? ""}</td>
+            <td>${getValueLabel(item.value_edge)}</td>
+            <td>${escapeHtml(item.note)}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "连接失败";
+        errorBox.innerHTML = `<div class="error">错误信息：${escapeHtml(err.message || err)}</div>`;
+        tableBody.innerHTML = `<tr><td colspan="8">读取失败</td></tr>`;
+      }
+    }
+
+    loadMatches();
+  </script>
 </body>
 </html>
