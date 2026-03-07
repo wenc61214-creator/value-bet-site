@@ -192,15 +192,21 @@
             <th>主队</th>
             <th>客队</th>
             <th>比赛时间</th>
+            <th>盘口类型</th>
+            <th>投注选项</th>
+            <th>博彩公司</th>
             <th>模型概率</th>
+            <th>市场隐含概率</th>
+            <th>模型赔率</th>
             <th>市场赔率</th>
             <th>Value</th>
+            <th>是否价值投注</th>
             <th>备注</th>
           </tr>
         </thead>
         <tbody id="matchesTable">
           <tr>
-            <td colspan="8">加载中...</td>
+            <td colspan="14">加载中...</td>
           </tr>
         </tbody>
       </table>
@@ -251,7 +257,7 @@
           SUPABASE_KEY.includes("把你的")
         ) {
           statusEl.textContent = "请先在代码里填入 Supabase URL 和 Publishable Key。";
-          tableBody.innerHTML = `<tr><td colspan="8">请先填写 Supabase 配置</td></tr>`;
+          tableBody.innerHTML = `<tr><td colspan="14">请先填写 Supabase 配置</td></tr>`;
           return;
         }
 
@@ -271,7 +277,7 @@
         statusEl.textContent = `连接成功，已读取 ${data.length} 条比赛数据。`;
 
         if (!data || data.length === 0) {
-          tableBody.innerHTML = `<tr><td colspan="8">数据库里还没有数据</td></tr>`;
+          tableBody.innerHTML = `<tr><td colspan="14">数据库里还没有数据</td></tr>`;
           return;
         }
 
@@ -281,9 +287,15 @@
             <td>${escapeHtml(item.home_team)}</td>
             <td>${escapeHtml(item.away_team)}</td>
             <td>${escapeHtml(formatDate(item.match_time))}</td>
-            <td>${item.model_proba ?? ""}</td>
+            <td>${escapeHtml(item.market_type)}</td>
+            <td>${escapeHtml(item.selection)}</td>
+            <td>${escapeHtml(item.bookmaker)}</td>
+            <td>${item.model_probability ?? item.model_proba ?? ""}</td>
+            <td>${item.implied_probability ?? ""}</td>
+            <td>${item.model_odds ?? ""}</td>
             <td>${item.market_odds ?? ""}</td>
             <td>${getValueLabel(item.value_edge)}</td>
+            <td>${item.is_value_bet ? "是" : "否"}</td>
             <td>${escapeHtml(item.note)}</td>
           </tr>
         `).join("");
@@ -291,7 +303,7 @@
         console.error(err);
         statusEl.textContent = "连接失败";
         errorBox.innerHTML = `<div class="error">错误信息：${escapeHtml(err.message || err)}</div>`;
-        tableBody.innerHTML = `<tr><td colspan="8">读取失败</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="14">读取失败</td></tr>`;
       }
     }
 
