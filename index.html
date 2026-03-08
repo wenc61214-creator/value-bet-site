@@ -564,7 +564,24 @@
         allMatches = data || [];
         applyFilters();
 
-        if (!data || data.length === 0) {
+    function updateSummary(list) {
+      const totalCount = list.length;
+      const valueBetCount = list.filter(item => item.is_value_bet).length;
+
+      const oddsList = list
+        .map(item => getBookmakerOdds(item))
+        .filter(odds => Number.isFinite(odds) && odds > 0);
+
+      const avgMarketOdds = oddsList.length
+        ? (oddsList.reduce((a, b) => a + b, 0) / oddsList.length).toFixed(2)
+        : "0";
+
+      totalCountEl.textContent = totalCount;
+      valueBetCountEl.textContent = valueBetCount;
+      avgMarketOddsEl.textContent = avgMarketOdds;
+    }
+
+       if (!data || data.length === 0) {
           tableBody.innerHTML = `<tr><td colspan="14">数据库里还没有数据</td></tr>`;
           return;
         }
