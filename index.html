@@ -567,9 +567,9 @@
         const totalCount = data.length;
         const valueBetCount = data.filter(item => item.is_value_bet).length;
 
-        const oddsList = data
-          .map(item => Number(item.market_odds))
-          .filter(num => !isNaN(num));
+        const oddsList = list
+          .map(item => getBookmakerOdds(item))
+          .filter(odds => Number.isFinite(odds) && odds > 0);
 
         const avgMarketOdds = oddsList.length
           ? (oddsList.reduce((a, b) => a + b, 0) / oddsList.length).toFixed(2)
