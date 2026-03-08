@@ -422,6 +422,16 @@
       return d.toLocaleString("zh-CN", { hour12: false });
     }
 
+    function formatOdds(value) {
+      const n = Number(value);
+      return Number.isFinite(n) && n > 0 ? n.toFixed(2) : "";
+    }
+
+    function formatValuePercent(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? `${n.toFixed(2)}%` : "-";
+    }
+
     function escapeHtml(text) {
       if (text === null || text === undefined) return "";
       return String(text)
@@ -457,8 +467,8 @@
       const valueBetCount = list.filter(item => item.is_value_bet).length;
 
       const oddsList = list
-        .map(item => Number(item.market_odds))
-        .filter(num => !isNaN(num));
+        .map(item => getBookmakerOdds(item))
+        .filter(odds => Number.isFinite(odds) && odds > 0);
 
       const avgMarketOdds = oddsList.length
         ? (oddsList.reduce((a, b) => a + b, 0) / oddsList.length).toFixed(2)
@@ -489,8 +499,8 @@
           <td>${item.model_probability ?? item.model_proba ?? ""}</td>
           <td>${item.implied_probability ?? ""}</td>
           <td>${item.model_odds ?? ""}</td>
-          <td>${getBookmakerOdds(item) || ""}</td>
-          <td>${getValueLabel(getValuePercent(item))}</td>
+          <td>${formatOdds(getBookmakerOdds(item))}</td>
+          <td>${formatValuePercent(getValuePercent(item))}</td>
           <td>${getYesNoLabel(item.is_value_bet)}</td>
           <td>${escapeHtml(getNotes(item))}</td>
         </tr>
@@ -586,8 +596,8 @@
             <td>${item.model_probability ?? item.model_proba ?? ""}</td>
             <td>${item.implied_probability ?? ""}</td>
             <td>${item.model_odds ?? ""}</td>
-            <td>${getBookmakerOdds(item) || ""}</td>
-            <td>${getValueLabel(getValuePercent(item))}</td>
+            <td>${formatOdds(getBookmakerOdds(item))}</td>
+            <td>${formatValuePercent(getValuePercent(item))}</td>
             <td>${getYesNoLabel(item.is_value_bet)}</td>
             <td>${escapeHtml(getNotes(item))}</td>
           </tr>
