@@ -359,6 +359,24 @@
 
     let allMatches = [];
 
+    function formatMarketType(marketType, lineValue) {
+  if (marketType === 'h2h') return '1X2';
+  if (marketType === 'totals') return lineValue ? `O/U ${lineValue}` : 'Totals';
+  if (marketType === 'btts') return 'BTTS';
+  return marketType || '';
+}
+
+function formatSelection(selection) {
+  if (selection === 'home_win') return 'Home Win';
+  if (selection === 'draw') return 'Draw';
+  if (selection === 'away_win') return 'Away Win';
+  if (selection === 'over_2_5') return 'Over 2.5';
+  if (selection === 'under_2_5') return 'Under 2.5';
+  if (selection === 'yes') return 'Yes';
+  if (selection === 'no') return 'No';
+  return selection || '';
+}
+
     function safeNum(value) {
       if (value === null || value === undefined || value === "") return 0;
       const n = Number(value);
