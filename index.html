@@ -553,7 +553,7 @@
         const { data, error } = await supabase
           .from("v_signal_cards")
           .select("*")
-          .order("created_at", { ascending: false });
+          .order("kickoff_time", { ascending: true });
 
         if (error) {
           throw error;
