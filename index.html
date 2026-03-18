@@ -551,7 +551,7 @@
         statusEl.textContent = "正在读取数据库数据...";
 
         const { data, error } = await supabase
-          .from("matches")
+          .from("v_signal_cards")
           .select("*")
           .order("created_at", { ascending: false });
 
