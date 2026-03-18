@@ -47,7 +47,7 @@
       border-radius: 14px;
       padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
     }
 
     .card h2 {
@@ -117,19 +117,18 @@
 
     table {
       width: 100%;
-      min-width: 1200px;
+      min-width: 1280px;
       border-collapse: collapse;
       margin-top: 10px;
       overflow: hidden;
     }
 
-    th,
-    td {
+    th, td {
       padding: 12px;
       border-bottom: 1px solid #e5e7eb;
       text-align: left;
       font-size: 14px;
-      vertical-align: middle;
+      vertical-align: top;
     }
 
     th {
@@ -180,18 +179,6 @@
       padding: 14px;
     }
 
-    .summary-box .label {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 6px;
-    }
-
-    .summary-box .value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #111827;
-    }
-
     .controls-bar {
       display: flex;
       flex-wrap: wrap;
@@ -222,6 +209,18 @@
       width: 16px;
       height: 16px;
     }
+
+    .summary-box .label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .summary-box .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #111827;
+    }
   </style>
 </head>
 <body>
@@ -235,7 +234,7 @@
       <h2>网站说明</h2>
       <p>
         这是我的第一个价值投注网站。现在已经接入 Supabase 数据库，
-        会从视图里读取比赛数据并展示出来。
+        页面从 <strong>v_signal_cards</strong> 视图读取比赛、赔率和 Value 数据。
       </p>
     </div>
 
@@ -244,11 +243,11 @@
       <div class="grid">
         <div class="stat-box">
           <h3>比赛数据</h3>
-          <p>查看联赛、球队、赛程、比分、积分榜等基础信息。</p>
+          <p>查看联赛、球队、赛程等基础信息。</p>
         </div>
         <div class="stat-box">
           <h3>赔率数据</h3>
-          <p>获取不同博彩公司赔率并进行对比。</p>
+          <p>读取博彩公司赔率并进行对比。</p>
         </div>
         <div class="stat-box">
           <h3>Value 计算</h3>
@@ -256,7 +255,7 @@
         </div>
         <div class="stat-box">
           <h3>可视化展示</h3>
-          <p>把数据库里的比赛数据直接展示出来。</p>
+          <p>把数据库里的信号卡片直接展示出来。</p>
         </div>
       </div>
     </div>
@@ -359,108 +358,34 @@
       return value === null || value === undefined ? "" : String(value);
     }
 
-    function toBool(value) {
-      if (typeof value === "boolean") return value;
-      if (typeof value === "number") return value === 1;
-      if (typeof value === "string") {
-        const v = value.trim().toLowerCase();
-        return v === "true" || v === "1" || v === "yes" || v === "y";
-      }
-      return false;
-    }
-
-    function getKickoff(match) {
-      return safeStr(match.kickoff_time || match.match_time || match.time || "");
-    }
-
-    function getLeague(match) {
-      return safeStr(match.league || match.competition || "");
-    }
-
-    function getHomeTeam(match) {
-      return safeStr(match.home_team || match.home || "");
-    }
-
-    function getAwayTeam(match) {
-      return safeStr(match.away_team || match.away || "");
-    }
-
-    function getBookmaker(match) {
-      return safeStr(match.bookmaker || match.bookmaker_name || "");
-    }
-
-    function getLineValue(match) {
-      return safeStr(match.line_value || match.line || "");
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return "";
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     function formatMarketType(marketType, lineValue) {
-      const mt = safeStr(marketType).toLowerCase();
-      const line = safeStr(lineValue);
-
-      if (mt === "h2h" || mt === "1x2") return "1X2";
-      if (mt === "totals") return line ? `O/U ${line}` : "Totals";
-      if (mt === "btts") return "BTTS";
-      return safeStr(marketType);
+      if (marketType === "h2h") return "1X2";
+      if (marketType === "totals") return lineValue ? `O/U ${lineValue}` : "Totals";
+      if (marketType === "btts") return "BTTS";
+      return marketType || "";
     }
 
-    function formatSelection(selection) {
-      const s = safeStr(selection).toLowerCase();
-
-      if (s === "home_win") return "Home Win";
-      if (s === "draw") return "Draw";
-      if (s === "away_win") return "Away Win";
-      if (s === "over_2_5") return "Over 2.5";
-      if (s === "under_2_5") return "Under 2.5";
-      if (s === "yes") return "Yes";
-      if (s === "no") return "No";
-      return safeStr(selection);
-    }
-
-    function getBookmakerOdds(match) {
-      const value = match.bookmaker_odds ?? match.market_odds ?? match.odds ?? 0;
-      return safeNum(value);
-    }
-
-    function getModelProbabilityRaw(match) {
-      return match.model_probability ?? match.model_proba ?? match.probability ?? null;
-    }
-
-    function getImpliedProbabilityRaw(match) {
-      if (match.implied_probability !== null && match.implied_probability !== undefined && match.implied_probability !== "") {
-        return match.implied_probability;
-      }
-
-      const marketOdds = getBookmakerOdds(match);
-      if (marketOdds > 0) {
-        return 1 / marketOdds;
-      }
-
-      return null;
-    }
-
-    function getModelOdds(match) {
-      return safeNum(match.model_odds);
-    }
-
-    function getValuePercent(match) {
-      if (match.value_percent !== null && match.value_percent !== undefined && match.value_percent !== "") {
-        return Number(match.value_percent);
-      }
-      if (match.value_edge !== null && match.value_edge !== undefined && match.value_edge !== "") {
-        return Number(match.value_edge) * 100;
-      }
-      return 0;
-    }
-
-    function isValueBet(match) {
-      if (match.is_value_bet !== null && match.is_value_bet !== undefined) {
-        return toBool(match.is_value_bet);
-      }
-      return getValuePercent(match) > 0;
-    }
-
-    function getNotes(match) {
-      return safeStr(match.notes || match.note || "");
+    function formatSelection(selection, lineValue) {
+      if (selection === "home_win") return "Home Win";
+      if (selection === "draw") return "Draw";
+      if (selection === "away_win") return "Away Win";
+      if (selection === "yes") return "Yes";
+      if (selection === "no") return "No";
+      if (selection === "over" && lineValue) return `Over ${lineValue}`;
+      if (selection === "under" && lineValue) return `Under ${lineValue}`;
+      if (selection === "over_2_5") return "Over 2.5";
+      if (selection === "under_2_5") return "Under 2.5";
+      return selection || "";
     }
 
     function formatDateTime(value) {
@@ -475,11 +400,9 @@
       return Number.isFinite(n) && n > 0 ? n.toFixed(2) : "-";
     }
 
-    function formatProbability(value) {
+    function formatPercent(value) {
       const n = Number(value);
-      if (!Number.isFinite(n)) return "-";
-      const percent = n <= 1 ? n * 100 : n;
-      return `${percent.toFixed(2)}%`;
+      return Number.isFinite(n) ? `${(n * 100).toFixed(2)}%` : "-";
     }
 
     function formatValuePercent(value) {
@@ -487,14 +410,75 @@
       return Number.isFinite(n) ? `${n.toFixed(2)}%` : "-";
     }
 
-    function escapeHtml(text) {
-      if (text === null || text === undefined) return "";
-      return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    function getLeague(match) {
+      return safeStr(match.league_name || match.league || "");
+    }
+
+    function getHomeTeam(match) {
+      return safeStr(match.home_team || match.home || "");
+    }
+
+    function getAwayTeam(match) {
+      return safeStr(match.away_team || match.away || "");
+    }
+
+    function getKickoff(match) {
+      return safeStr(match.kickoff_time || match.match_time || match.time || "");
+    }
+
+    function getMarketType(match) {
+      return formatMarketType(match.market_type, match.line_value);
+    }
+
+    function getSelection(match) {
+      return formatSelection(match.selection, match.line_value);
+    }
+
+    function getBookmaker(match) {
+      return safeStr(match.bookmaker || match.bookmaker_key || "");
+    }
+
+    function getModelProbability(match) {
+      const value = match.model_prob ?? match.model_probability;
+      return safeNum(value);
+    }
+
+    function getMarketImpliedProbability(match) {
+      const value = match.market_prob_raw ?? match.market_implied_probability ?? match.implied_probability;
+      return safeNum(value);
+    }
+
+    function getModelOdds(match) {
+      return safeNum(match.model_odds);
+    }
+
+    function getMarketOdds(match) {
+      const value = match.odds_decimal ?? match.bookmaker_odds ?? match.market_odds;
+      return safeNum(value);
+    }
+
+    function getValuePercent(match) {
+      if (match.value_percent !== null && match.value_percent !== undefined && match.value_percent !== "") {
+        return Number(match.value_percent);
+      }
+      if (match.value_pct !== null && match.value_pct !== undefined && match.value_pct !== "") {
+        return Number(match.value_pct);
+      }
+      if (match.value_edge !== null && match.value_edge !== undefined && match.value_edge !== "") {
+        return Number(match.value_edge) * 100;
+      }
+      if (match.edge !== null && match.edge !== undefined && match.edge !== "") {
+        return Number(match.edge) * 100;
+      }
+      return 0;
+    }
+
+    function isValueBet(match) {
+      return Boolean(match.is_value ?? match.is_value_bet);
+    }
+
+    function getNotes(match) {
+      return safeStr(match.notes || match.note || "");
     }
 
     function getValueLabel(valuePercent) {
@@ -515,7 +499,7 @@
       const valueBetCount = list.filter(item => isValueBet(item)).length;
 
       const oddsList = list
-        .map(item => getBookmakerOdds(item))
+        .map(item => getMarketOdds(item))
         .filter(odds => Number.isFinite(odds) && odds > 0);
 
       const avgMarketOdds = oddsList.length
@@ -535,37 +519,28 @@
         return;
       }
 
-      tableBody.innerHTML = list
-        .map(item => {
-          const marketType = formatMarketType(item.market_type, getLineValue(item));
-          const selection = formatSelection(item.selection);
-          const modelProbability = formatProbability(getModelProbabilityRaw(item));
-          const impliedProbability = formatProbability(getImpliedProbabilityRaw(item));
-          const modelOdds = formatOdds(getModelOdds(item));
-          const marketOdds = formatOdds(getBookmakerOdds(item));
-          const valuePercent = getValuePercent(item);
-          const noteText = getNotes(item);
+      tableBody.innerHTML = list.map(item => {
+        const valuePercent = getValuePercent(item);
 
-          return `
-            <tr>
-              <td>${escapeHtml(getLeague(item))}</td>
-              <td>${escapeHtml(getHomeTeam(item))}</td>
-              <td>${escapeHtml(getAwayTeam(item))}</td>
-              <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
-              <td>${escapeHtml(marketType)}</td>
-              <td>${escapeHtml(selection)}</td>
-              <td>${escapeHtml(getBookmaker(item))}</td>
-              <td>${escapeHtml(modelProbability)}</td>
-              <td>${escapeHtml(impliedProbability)}</td>
-              <td>${escapeHtml(modelOdds)}</td>
-              <td>${escapeHtml(marketOdds)}</td>
-              <td>${getValueLabel(valuePercent)} ${escapeHtml(formatValuePercent(valuePercent))}</td>
-              <td>${getYesNoLabel(isValueBet(item))}</td>
-              <td>${escapeHtml(noteText)}</td>
-            </tr>
-          `;
-        })
-        .join("");
+        return `
+          <tr>
+            <td>${escapeHtml(getLeague(item))}</td>
+            <td>${escapeHtml(getHomeTeam(item))}</td>
+            <td>${escapeHtml(getAwayTeam(item))}</td>
+            <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
+            <td>${escapeHtml(getMarketType(item))}</td>
+            <td>${escapeHtml(getSelection(item))}</td>
+            <td>${escapeHtml(getBookmaker(item))}</td>
+            <td>${escapeHtml(formatPercent(getModelProbability(item)))}</td>
+            <td>${escapeHtml(formatPercent(getMarketImpliedProbability(item)))}</td>
+            <td>${escapeHtml(formatOdds(getModelOdds(item)))}</td>
+            <td>${escapeHtml(formatOdds(getMarketOdds(item)))}</td>
+            <td>${getValueLabel(valuePercent)}<br>${escapeHtml(formatValuePercent(valuePercent))}</td>
+            <td>${getYesNoLabel(isValueBet(item))}</td>
+            <td>${escapeHtml(getNotes(item))}</td>
+          </tr>
+        `;
+      }).join("");
     }
 
     function applyFilters() {
@@ -577,8 +552,8 @@
           getLeague(item),
           getHomeTeam(item),
           getAwayTeam(item),
-          formatMarketType(item.market_type, getLineValue(item)),
-          formatSelection(item.selection),
+          getMarketType(item),
+          getSelection(item),
           getBookmaker(item),
           getNotes(item)
         ]
@@ -607,22 +582,20 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         statusEl.textContent = "正在读取数据库数据...";
-        errorBox.innerHTML = "";
 
         const { data, error } = await supabase
           .from("v_signal_cards")
           .select("*")
           .order("kickoff_time", { ascending: true });
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
-        allMatches = Array.isArray(data) ? data : [];
+        allMatches = data || [];
+        statusEl.textContent = `连接成功，已读取 ${allMatches.length} 条比赛数据。`;
 
-        if (allMatches.length === 0) {
-          statusEl.textContent = "连接成功，但数据库里还没有数据。";
-          renderMatches([]);
+        if (!allMatches.length) {
+          tableBody.innerHTML = '<tr><td colspan="14">数据库里还没有数据</td></tr>';
+          updateSummary([]);
           return;
         }
 
