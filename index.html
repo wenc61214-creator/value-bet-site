@@ -47,7 +47,7 @@
       border-radius: 14px;
       padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
     }
 
     .card h2 {
@@ -88,34 +88,6 @@
       color: #444;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      overflow: hidden;
-    }
-
-    th, td {
-      padding: 12px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    th {
-      background: #f3f4f6;
-    }
-
-    .value-good {
-      color: green;
-      font-weight: bold;
-    }
-
-    .value-normal {
-      color: #666;
-      font-weight: bold;
-    }
-
     .small {
       color: #666;
       font-size: 13px;
@@ -137,13 +109,32 @@
       border-radius: 10px;
       margin-top: 10px;
     }
+
     .table-wrap {
       width: 100%;
       overflow-x: auto;
     }
 
     table {
+      width: 100%;
       min-width: 1200px;
+      border-collapse: collapse;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f3f4f6;
+      white-space: nowrap;
     }
 
     .badge {
@@ -189,6 +180,18 @@
       padding: 14px;
     }
 
+    .summary-box .label {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .summary-box .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #111827;
+    }
+
     .controls-bar {
       display: flex;
       flex-wrap: wrap;
@@ -219,24 +222,12 @@
       width: 16px;
       height: 16px;
     }
-
-    .summary-box .label {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 6px;
-    }
-
-    .summary-box .value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #111827;
-    }
   </style>
 </head>
 <body>
   <header>
     <h1>Value Bet Site</h1>
-    <p>比赛数据 + 赔率数据 + Value 计算</p >
+    <p>比赛数据 + 赔率数据 + Value 计算</p>
   </header>
 
   <div class="container">
@@ -244,8 +235,8 @@
       <h2>网站说明</h2>
       <p>
         这是我的第一个价值投注网站。现在已经接入 Supabase 数据库，
-        会从 matches 表里读取比赛数据并展示出来。
-      </p >
+        会从视图里读取比赛数据并展示出来。
+      </p>
     </div>
 
     <div class="card">
@@ -253,19 +244,19 @@
       <div class="grid">
         <div class="stat-box">
           <h3>比赛数据</h3>
-          <p>查看联赛、球队、赛程、比分、积分榜等基础信息。</p >
+          <p>查看联赛、球队、赛程、比分、积分榜等基础信息。</p>
         </div>
         <div class="stat-box">
           <h3>赔率数据</h3>
-          <p>获取不同博彩公司赔率并进行对比。</p >
+          <p>获取不同博彩公司赔率并进行对比。</p>
         </div>
         <div class="stat-box">
           <h3>Value 计算</h3>
-          <p>根据模型概率和市场赔率，找出被低估的投注项。</p >
+          <p>根据模型概率和市场赔率，找出被低估的投注项。</p>
         </div>
         <div class="stat-box">
           <h3>可视化展示</h3>
-          <p>把数据库里的比赛数据直接展示出来。</p >
+          <p>把数据库里的比赛数据直接展示出来。</p>
         </div>
       </div>
     </div>
@@ -273,7 +264,7 @@
     <div class="card">
       <h2>数据库连接状态</h2>
       <div id="status" class="status">正在连接 Supabase...</div>
-      <div class="small">下面的比赛列表会从 Supabase 的 matches 表实时读取。</div>
+      <div class="small">下面的比赛列表会从 Supabase 的 v_signal_cards 视图读取。</div>
       <div id="errorBox"></div>
     </div>
 
@@ -285,7 +276,7 @@
           id="searchInput"
           class="search-input"
           type="text"
-          placeholder="搜索联赛 / 球队 / 盘口类型 / 博彩公司"
+          placeholder="搜索联赛 / 球队 / 盘口类型 / 投注选项 / 博彩公司"
         />
 
         <label class="filter-check">
@@ -293,7 +284,7 @@
           只看价值投注
         </label>
       </div>
-      
+
       <div class="summary-grid">
         <div class="summary-box">
           <div class="label">比赛总数</div>
@@ -307,35 +298,35 @@
           <div class="label">平均市场赔率</div>
           <div class="value" id="avgMarketOdds">0</div>
         </div>
-    </div>
+      </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>联赛</th>
-            <th>主队</th>
-            <th>客队</th>
-            <th>比赛时间</th>
-            <th>盘口类型</th>
-            <th>投注选项</th>
-            <th>博彩公司</th>
-            <th>模型概率</th>
-            <th>市场隐含概率</th>
-            <th>模型赔率</th>
-            <th>市场赔率</th>
-            <th>Value</th>
-            <th>是否价值投注</th>
-            <th>备注</th>
-          </tr>
-        </thead>
-        <tbody id="matchesTable">
-          <tr>
-            <td colspan="14">加载中...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>联赛</th>
+              <th>主队</th>
+              <th>客队</th>
+              <th>比赛时间</th>
+              <th>盘口类型</th>
+              <th>投注选项</th>
+              <th>博彩公司</th>
+              <th>模型概率</th>
+              <th>市场隐含概率</th>
+              <th>模型赔率</th>
+              <th>市场赔率</th>
+              <th>Value</th>
+              <th>是否价值投注</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="matchesTable">
+            <tr>
+              <td colspan="14">加载中...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -344,7 +335,6 @@
   </footer>
 
   <script>
-    // 第一步：把下面两个值改成你自己的
     const SUPABASE_URL = "https://winxqeoigwtefybcuimm.supabase.co";
     const SUPABASE_KEY = "sb_publishable_IWJWPV2xKA1nn27L1e7wyQ_-SHy5cY-";
 
@@ -359,24 +349,6 @@
 
     let allMatches = [];
 
-    function formatMarketType(marketType, lineValue) {
-  if (marketType === 'h2h') return '1X2';
-  if (marketType === 'totals') return lineValue ? `O/U ${lineValue}` : 'Totals';
-  if (marketType === 'btts') return 'BTTS';
-  return marketType || '';
-}
-
-function formatSelection(selection) {
-  if (selection === 'home_win') return 'Home Win';
-  if (selection === 'draw') return 'Draw';
-  if (selection === 'away_win') return 'Away Win';
-  if (selection === 'over_2_5') return 'Over 2.5';
-  if (selection === 'under_2_5') return 'Under 2.5';
-  if (selection === 'yes') return 'Yes';
-  if (selection === 'no') return 'No';
-  return selection || '';
-}
-
     function safeNum(value) {
       if (value === null || value === undefined || value === "") return 0;
       const n = Number(value);
@@ -385,6 +357,16 @@ function formatSelection(selection) {
 
     function safeStr(value) {
       return value === null || value === undefined ? "" : String(value);
+    }
+
+    function toBool(value) {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") return value === 1;
+      if (typeof value === "string") {
+        const v = value.trim().toLowerCase();
+        return v === "true" || v === "1" || v === "yes" || v === "y";
+      }
+      return false;
     }
 
     function getKickoff(match) {
@@ -403,20 +385,61 @@ function formatSelection(selection) {
       return safeStr(match.away_team || match.away || "");
     }
 
-    function getTeams(match) {
-      const home = getHomeTeam(match);
-      const away = getAwayTeam(match);
-      return `${home} vs ${away}`.trim();
+    function getBookmaker(match) {
+      return safeStr(match.bookmaker || match.bookmaker_name || "");
+    }
+
+    function getLineValue(match) {
+      return safeStr(match.line_value || match.line || "");
+    }
+
+    function formatMarketType(marketType, lineValue) {
+      const mt = safeStr(marketType).toLowerCase();
+      const line = safeStr(lineValue);
+
+      if (mt === "h2h" || mt === "1x2") return "1X2";
+      if (mt === "totals") return line ? `O/U ${line}` : "Totals";
+      if (mt === "btts") return "BTTS";
+      return safeStr(marketType);
+    }
+
+    function formatSelection(selection) {
+      const s = safeStr(selection).toLowerCase();
+
+      if (s === "home_win") return "Home Win";
+      if (s === "draw") return "Draw";
+      if (s === "away_win") return "Away Win";
+      if (s === "over_2_5") return "Over 2.5";
+      if (s === "under_2_5") return "Under 2.5";
+      if (s === "yes") return "Yes";
+      if (s === "no") return "No";
+      return safeStr(selection);
     }
 
     function getBookmakerOdds(match) {
-      if (match.bookmaker_odds !== null && match.bookmaker_odds !== undefined && match.bookmaker_odds !== "") {
-        return Number(match.bookmaker_odds);
+      const value = match.bookmaker_odds ?? match.market_odds ?? match.odds ?? 0;
+      return safeNum(value);
+    }
+
+    function getModelProbabilityRaw(match) {
+      return match.model_probability ?? match.model_proba ?? match.probability ?? null;
+    }
+
+    function getImpliedProbabilityRaw(match) {
+      if (match.implied_probability !== null && match.implied_probability !== undefined && match.implied_probability !== "") {
+        return match.implied_probability;
       }
-      if (match.market_odds !== null && match.market_odds !== undefined && match.market_odds !== "") {
-        return Number(match.market_odds);
+
+      const marketOdds = getBookmakerOdds(match);
+      if (marketOdds > 0) {
+        return 1 / marketOdds;
       }
-      return 0;
+
+      return null;
+    }
+
+    function getModelOdds(match) {
+      return safeNum(match.model_odds);
     }
 
     function getValuePercent(match) {
@@ -427,6 +450,13 @@ function formatSelection(selection) {
         return Number(match.value_edge) * 100;
       }
       return 0;
+    }
+
+    function isValueBet(match) {
+      if (match.is_value_bet !== null && match.is_value_bet !== undefined) {
+        return toBool(match.is_value_bet);
+      }
+      return getValuePercent(match) > 0;
     }
 
     function getNotes(match) {
@@ -442,7 +472,14 @@ function formatSelection(selection) {
 
     function formatOdds(value) {
       const n = Number(value);
-      return Number.isFinite(n) && n > 0 ? n.toFixed(2) : "";
+      return Number.isFinite(n) && n > 0 ? n.toFixed(2) : "-";
+    }
+
+    function formatProbability(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "-";
+      const percent = n <= 1 ? n * 100 : n;
+      return `${percent.toFixed(2)}%`;
     }
 
     function formatValuePercent(value) {
@@ -460,16 +497,9 @@ function formatSelection(selection) {
         .replaceAll("'", "&#039;");
     }
 
-    function formatDate(dateStr) {
-      if (!dateStr) return "";
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleString("zh-CN");
-    }
-
-    function getValueLabel(valueEdge) {
-      const n = Number(valueEdge);
-      if (isNaN(n)) return '<span class="badge badge-normal">—</span>';
+    function getValueLabel(valuePercent) {
+      const n = Number(valuePercent);
+      if (!Number.isFinite(n)) return '<span class="badge badge-normal">—</span>';
       if (n > 0) return '<span class="badge badge-good">正价值</span>';
       return '<span class="badge badge-normal">一般</span>';
     }
@@ -482,7 +512,7 @@ function formatSelection(selection) {
 
     function updateSummary(list) {
       const totalCount = list.length;
-      const valueBetCount = list.filter(item => item.is_value_bet).length;
+      const valueBetCount = list.filter(item => isValueBet(item)).length;
 
       const oddsList = list
         .map(item => getBookmakerOdds(item))
@@ -501,28 +531,41 @@ function formatSelection(selection) {
       updateSummary(list);
 
       if (!list || list.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="14">没有符合条件的比赛</td></tr>`;
+        tableBody.innerHTML = '<tr><td colspan="14">没有符合条件的比赛</td></tr>';
         return;
       }
 
-      tableBody.innerHTML = list.map(item => `
-        <tr>
-          <td>${escapeHtml(getLeague(item))}</td>
-          <td>${escapeHtml(getHomeTeam(item))}</td>
-          <td>${escapeHtml(getAwayTeam(item))}</td>
-          <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
-          <td>${escapeHtml(item.market_type || "")}</td>
-          <td>${escapeHtml(item.selection || "")}</td>
-          <td>${escapeHtml(item.bookmaker || "")}</td>
-          <td>${item.model_probability ?? item.model_proba ?? ""}</td>
-          <td>${item.implied_probability ?? ""}</td>
-          <td>${item.model_odds ?? ""}</td>
-          <td>${formatOdds(getBookmakerOdds(item))}</td>
-          <td>${formatValuePercent(getValuePercent(item))}</td>
-          <td>${getYesNoLabel(item.is_value_bet)}</td>
-          <td>${escapeHtml(getNotes(item))}</td>
-        </tr>
-      `).join("");
+      tableBody.innerHTML = list
+        .map(item => {
+          const marketType = formatMarketType(item.market_type, getLineValue(item));
+          const selection = formatSelection(item.selection);
+          const modelProbability = formatProbability(getModelProbabilityRaw(item));
+          const impliedProbability = formatProbability(getImpliedProbabilityRaw(item));
+          const modelOdds = formatOdds(getModelOdds(item));
+          const marketOdds = formatOdds(getBookmakerOdds(item));
+          const valuePercent = getValuePercent(item);
+          const noteText = getNotes(item);
+
+          return `
+            <tr>
+              <td>${escapeHtml(getLeague(item))}</td>
+              <td>${escapeHtml(getHomeTeam(item))}</td>
+              <td>${escapeHtml(getAwayTeam(item))}</td>
+              <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
+              <td>${escapeHtml(marketType)}</td>
+              <td>${escapeHtml(selection)}</td>
+              <td>${escapeHtml(getBookmaker(item))}</td>
+              <td>${escapeHtml(modelProbability)}</td>
+              <td>${escapeHtml(impliedProbability)}</td>
+              <td>${escapeHtml(modelOdds)}</td>
+              <td>${escapeHtml(marketOdds)}</td>
+              <td>${getValueLabel(valuePercent)} ${escapeHtml(formatValuePercent(valuePercent))}</td>
+              <td>${getYesNoLabel(isValueBet(item))}</td>
+              <td>${escapeHtml(noteText)}</td>
+            </tr>
+          `;
+        })
+        .join("");
     }
 
     function applyFilters() {
@@ -531,20 +574,20 @@ function formatSelection(selection) {
 
       const filtered = allMatches.filter(item => {
         const searchText = [
-          item.league,
-          item.home_team,
-          item.away_team,
-          item.market_type,
-          item.selection,
-          item.bookmaker,
-          item.note
+          getLeague(item),
+          getHomeTeam(item),
+          getAwayTeam(item),
+          formatMarketType(item.market_type, getLineValue(item)),
+          formatSelection(item.selection),
+          getBookmaker(item),
+          getNotes(item)
         ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
 
         const matchKeyword = !keyword || searchText.includes(keyword);
-        const matchValue = !valueOnly || item.is_value_bet;
+        const matchValue = !valueOnly || isValueBet(item);
 
         return matchKeyword && matchValue;
       });
@@ -555,18 +598,16 @@ function formatSelection(selection) {
 
     async function loadMatches() {
       try {
-        if (
-          SUPABASE_URL.includes("把你的") ||
-          SUPABASE_KEY.includes("把你的")
-        ) {
+        if (SUPABASE_URL.includes("把你的") || SUPABASE_KEY.includes("把你的")) {
           statusEl.textContent = "请先在代码里填入 Supabase URL 和 Publishable Key。";
-          tableBody.innerHTML = `<tr><td colspan="14">请先填写 Supabase 配置</td></tr>`;
+          tableBody.innerHTML = '<tr><td colspan="14">请先填写 Supabase 配置</td></tr>';
           return;
         }
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         statusEl.textContent = "正在读取数据库数据...";
+        errorBox.innerHTML = "";
 
         const { data, error } = await supabase
           .from("v_signal_cards")
@@ -577,56 +618,20 @@ function formatSelection(selection) {
           throw error;
         }
 
-        statusEl.textContent = `连接成功，已读取 ${data.length} 条比赛数据。`;
+        allMatches = Array.isArray(data) ? data : [];
 
-        allMatches = data || [];
-        applyFilters();
-
-    function updateSummary(list) {
-      const totalCount = list.length;
-      const valueBetCount = list.filter(item => item.is_value_bet).length;
-
-      const oddsList = list
-        .map(item => getBookmakerOdds(item))
-        .filter(odds => Number.isFinite(odds) && odds > 0);
-
-      const avgMarketOdds = oddsList.length
-        ? (oddsList.reduce((a, b) => a + b, 0) / oddsList.length).toFixed(2)
-        : "0";
-
-      totalCountEl.textContent = totalCount;
-      valueBetCountEl.textContent = valueBetCount;
-      avgMarketOddsEl.textContent = avgMarketOdds;
-    }
-
-       if (!data || data.length === 0) {
-          tableBody.innerHTML = `<tr><td colspan="14">数据库里还没有数据</td></tr>`;
+        if (allMatches.length === 0) {
+          statusEl.textContent = "连接成功，但数据库里还没有数据。";
+          renderMatches([]);
           return;
         }
 
-        tableBody.innerHTML = data.map(item => `
-          <tr>
-            <td>${escapeHtml(getLeague(item))}</td>
-            <td>${escapeHtml(getHomeTeam(item))}</td>
-            <td>${escapeHtml(getAwayTeam(item))}</td>
-            <td>${escapeHtml(formatDateTime(getKickoff(item)))}</td>
-            <td>${escapeHtml(item.market_type || "")}</td>
-            <td>${escapeHtml(item.selection || "")}</td>
-            <td>${escapeHtml(item.bookmaker || "")}</td>
-            <td>${item.model_probability ?? item.model_proba ?? ""}</td>
-            <td>${item.implied_probability ?? ""}</td>
-            <td>${item.model_odds ?? ""}</td>
-            <td>${formatOdds(getBookmakerOdds(item))}</td>
-            <td>${formatValuePercent(getValuePercent(item))}</td>
-            <td>${getYesNoLabel(item.is_value_bet)}</td>
-            <td>${escapeHtml(getNotes(item))}</td>
-          </tr>
-        `).join("");
+        applyFilters();
       } catch (err) {
         console.error(err);
         statusEl.textContent = "连接失败";
         errorBox.innerHTML = `<div class="error">错误信息：${escapeHtml(err.message || err)}</div>`;
-        tableBody.innerHTML = `<tr><td colspan="14">读取失败</td></tr>`;
+        tableBody.innerHTML = '<tr><td colspan="14">读取失败</td></tr>';
       }
     }
 
